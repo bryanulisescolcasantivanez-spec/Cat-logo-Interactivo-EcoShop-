@@ -1,13 +1,63 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>lore</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoShop - Dashboard de Gestión</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>EcoShop 🌿</h1>
+    <p>Dashboard de Gestión de Productos</p>
+  </header>
+
+  <main class="container">
+    
+    <section class="controles">
+      <div class="buscador-container">
+        <label for="buscador">Buscar artículo:</label>
+        <input type="text" id="buscador" placeholder="Ej: Lámpara solar..." />
+      </div>
+
+      <div class="filtros-container">
+        <p>Filtrar por categoría:</p>
+        <div id="filtros-botones">
+          <button class="btn-filtro active" data-cat="todos">Todos</button>
+          <button class="btn-filtro" data-cat="hogar">Hogar</button>
+          <button class="btn-filtro" data-cat="tecnología">Tecnología</button>
+          <button class="btn-filtro" data-cat="deportes">Deportes</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-stats" class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Productos</h3>
+        <p id="total-productos">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Valor del Inventario</h3>
+        <p id="valor-inventario">$0.00</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <section id="grilla-productos" class="productos-grid">
+      </section>
+
+  </main>
+
+  <aside id="panel-detalles" class="hidden">
+    <div class="detalles-contenido">
+      <button id="cerrar-detalles">X</button>
+      <div id="info-producto">
+        </div>
+    </div>
+  </aside>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
 </html>

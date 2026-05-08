@@ -1,122 +1,86 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect, useMemo } from 'react';
+import { Producto } from './types';
+import { PRODUCTOS_INICIALES } from './data/inventario';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // 1. ESTADO: Inventario (Cargar de localStorage si existe)
+  const [inventario, setInventario] = useState<Producto[]>(() => {
+    const saved = localStorage.getItem('ecoshop_storage');
+    return saved ? JSON.parse(saved) : PRODUCTOS_INICIALES;
+  });
+
+  // 2. ESTADO: Filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [categoriaSel, setCategoriaSel] = useState('todos');
+
+  // 3. PERSISTENCIA: Guardar cada vez que el inventario cambie
+  useEffect(() => {
+    localStorage.setItem('ecoshop_storage', JSON.stringify(inventario));
+  }, [inventario]);
+
+  // 4. LÓGICA: Filtrado combinado (se recalcula eficientemente)
+  const productosFiltrados = useMemo(() => {
+    return inventario.filter(p => {
+      const matchNombre = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      const matchCat = categoriaSel === 'todos' || p.categoria === categoriaSel;
+      return matchNombre && matchCat;
+    });
+  }, [busqueda, categoriaSel, inventario]);
+
+  // 5. LÓGICA: Compra
+  const handleCompra = (id: number) => {
+    setInventario(prev => prev.map(p => 
+      (p.id === id && p.stock > 0) ? { ...p, stock: p.stock - 1 } : p
+    ));
+  };
+
+  // 6. LÓGICA: Estadísticas
+  const totalCat = productosFiltrados.length;
+  const valorTotal = inventario.reduce((acc, p) => acc + (p.precio * p.stock), 0);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-container">
+      <header>
+        <h1>EcoShop React 🌿</h1>
+        <div className="stats-panel">
+          <p>Productos en catálogo: {totalCat}</p>
+          <p>Valor Inventario Total: ${valorTotal.toLocaleString()}</p>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+      </header>
+
+      <section className="controles">
+        <input 
+          type="text" 
+          placeholder="Buscar..." 
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+        <select onChange={(e) => setCategoriaSel(e.target.value)}>
+          <option value="todos">Todas las categorías</option>
+          <option value="hogar">Hogar</option>
+          <option value="tecnología">Tecnología</option>
+          <option value="deportes">Deportes</option>
+        </select>
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <main className="grilla-productos">
+        {productosFiltrados.map(prod => (
+          <div key={prod.id} className={`card ${prod.stock === 0 ? 'agotado' : ''}`}>
+            <img src={prod.imagen} alt={prod.nombre} />
+            <h3>{prod.nombre}</h3>
+            <p>Stock: {prod.stock}</p>
+            <p>Precio: ${prod.precio}</p>
+            <button 
+              disabled={prod.stock === 0}
+              onClick={() => handleCompra(prod.id)}
+            >
+              {prod.stock === 0 ? 'Agotado' : 'Comprar'}
+            </button>
+          </div>
+        ))}
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
