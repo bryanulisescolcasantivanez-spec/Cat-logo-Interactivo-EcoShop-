@@ -1,36 +1,23 @@
-// src/hooks/useInventario.ts
 import { useState, useEffect } from 'react';
-
-export interface Producto {
-  id: number;
-  nombre: string;
-  precio: number;
-  categoria: string;
-  stock: number;
-  imagen: string;
-}
-
-const INVENTARIO_INICIAL: Producto[] = [
-  { id: 1, nombre: "Cactus Orgánico", precio: 15.50, categoria: "hogar", stock: 10, imagen: "url_o_ruta" },
-  // ... agrega 11 productos más aquí hasta completar 12
-];
+import { Producto } from '../types'; 
+import { PRODUCTOS_INICIALES } from '../data/inventario'; 
 
 export const useInventario = () => {
-  // Intentar cargar desde localStorage o usar el inicial
+  // Estado inicial con persistencia
   const [productos, setProductos] = useState<Producto[]>(() => {
     const salvo = localStorage.getItem('ecoShop_inventario');
-    return salvo ? JSON.parse(salvo) : INVENTARIO_INICIAL;
+    return salvo ? JSON.parse(salvo) : PRODUCTOS_INICIALES;
   });
 
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
 
-  // Persistencia: Guardar cada vez que el stock cambie
+  // Persistencia: Guardar en localStorage automáticamente
   useEffect(() => {
     localStorage.setItem('ecoShop_inventario', JSON.stringify(productos));
   }, [productos]);
 
-  // Lógica de Compra (QA: Evitar stock negativo)
+  // Lógica de Compra
   const comprarProducto = (id: number) => {
     setProductos(prev => prev.map(p => 
       p.id === id && p.stock > 0 ? { ...p, stock: p.stock - 1 } : p
@@ -44,11 +31,19 @@ export const useInventario = () => {
     return coincideCat && coincideBusq;
   });
 
-  // Estadísticas para el Panel
+  // Estadísticas calculadas
   const stats = {
     total: productos.length,
     valorTotal: productos.reduce((acc, p) => acc + (p.precio * p.stock), 0)
   };
 
-  return { productosFiltrados, comprarProducto, setFiltroCategoria, setBusqueda, stats, busqueda };
+  return { 
+    productosFiltrados, 
+    comprarProducto, 
+    setFiltroCategoria, 
+    filtroCategoria,
+    setBusqueda, 
+    busqueda,
+    stats 
+  };
 };
