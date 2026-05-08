@@ -1,86 +1,145 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Producto } from './types';
-import { PRODUCTOS_INICIALES } from './data/inventario';
+import React, { useState, useEffect, useMemo } from 'react';
+import './style/style.css';
 
-function App() {
-  // 1. ESTADO: Inventario (Cargar de localStorage si existe)
+// 1. Definición del Contrato de Datos
+interface Producto {
+  id: number;
+  nombre: string;
+  precio: number;
+  categoria: 'hogar' | 'tecnología' | 'deportes';
+  stock: number;
+  imagen: string;
+  descripcion: string;
+}
+
+// 2. Datos Maestros (Cumpliendo el requerimiento de 12 productos)
+const DATA_INICIAL: Producto[] = [
+  { id: 1, nombre: "Panel Solar Pro", precio: 120.50, categoria: "tecnología", stock: 10, imagen: "https://picsum.photos/200?random=1", descripcion: "Eficiencia energética para tu hogar." },
+  { id: 2, nombre: "Maceta Bio", precio: 15.00, categoria: "hogar", stock: 15, imagen: "https://picsum.photos/200?random=2", descripcion: "Materiales 100% biodegradables." },
+  { id: 3, nombre: "Pesas Eco-Friendly", precio: 45.99, categoria: "deportes", stock: 8, imagen: "https://picsum.photos/200?random=3", descripcion: "Caucho reciclado de alta durabilidad." },
+  { id: 4, nombre: "Lámpara LED Bambú", precio: 25.00, categoria: "hogar", stock: 5, imagen: "https://picsum.photos/200?random=4", descripcion: "Iluminación cálida y sostenible." },
+  { id: 5, nombre: "Teclado Madera", precio: 65.00, categoria: "tecnología", stock: 12, imagen: "https://picsum.photos/200?random=5", descripcion: "Diseño ergonómico en madera de nogal." },
+  { id: 6, nombre: "Botella Acero", precio: 18.50, categoria: "deportes", stock: 3, imagen: "https://picsum.photos/200?random=6", descripcion: "Mantiene la temperatura por 24 horas." },
+  { id: 7, nombre: "Cargador Solar", precio: 35.00, categoria: "tecnología", stock: 7, imagen: "https://picsum.photos/200?random=7", descripcion: "Carga tus dispositivos con energía limpia." },
+  { id: 8, nombre: "Compostera Dom.", precio: 85.00, categoria: "hogar", stock: 4, imagen: "https://picsum.photos/200?random=8", descripcion: "Transforma tus residuos en abono." },
+  { id: 9, nombre: "Yogamat Natural", precio: 30.00, categoria: "deportes", stock: 10, imagen: "https://picsum.photos/200?random=9", descripcion: "Caucho natural antideslizante." },
+  { id: 10, nombre: "Mouse Reciclado", precio: 22.00, categoria: "tecnología", stock: 0, imagen: "https://picsum.photos/200?random=10", descripcion: "Plásticos rescatados del océano." },
+  { id: 11, nombre: "Filtro de Agua", precio: 55.00, categoria: "hogar", stock: 6, imagen: "https://picsum.photos/200?random=11", descripcion: "Agua pura sin desperdicio." },
+  { id: 12, nombre: "Cuerda de Salto", precio: 12.00, categoria: "deportes", stock: 20, imagen: "https://picsum.photos/200?random=12", descripcion: "Fibras de cáñamo natural." }
+];
+
+export default function App() {
+  // --- ESTADOS ---
   const [inventario, setInventario] = useState<Producto[]>(() => {
-    const saved = localStorage.getItem('ecoshop_storage');
-    return saved ? JSON.parse(saved) : PRODUCTOS_INICIALES;
+    const persistencia = localStorage.getItem('ecoshop_v1');
+    return persistencia ? JSON.parse(persistencia) : DATA_INICIAL;
   });
-
-  // 2. ESTADO: Filtros
+  
   const [busqueda, setBusqueda] = useState('');
-  const [categoriaSel, setCategoriaSel] = useState('todos');
+  const [catFiltro, setCatFiltro] = useState('todos');
+  const [seleccionado, setSeleccionado] = useState<Producto | null>(null);
 
-  // 3. PERSISTENCIA: Guardar cada vez que el inventario cambie
+  // --- PERSISTENCIA ---
   useEffect(() => {
-    localStorage.setItem('ecoshop_storage', JSON.stringify(inventario));
+    localStorage.setItem('ecoshop_v1', JSON.stringify(inventario));
   }, [inventario]);
 
-  // 4. LÓGICA: Filtrado combinado (se recalcula eficientemente)
-  const productosFiltrados = useMemo(() => {
+  // --- LÓGICA DE FILTRADO ---
+  const productosVisibles = useMemo(() => {
     return inventario.filter(p => {
-      const matchNombre = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
-      const matchCat = categoriaSel === 'todos' || p.categoria === categoriaSel;
-      return matchNombre && matchCat;
+      const matchTxt = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      const matchCat = catFiltro === 'todos' || p.categoria === catFiltro;
+      return matchTxt && matchCat;
     });
-  }, [busqueda, categoriaSel, inventario]);
+  }, [busqueda, catFiltro, inventario]);
 
-  // 5. LÓGICA: Compra
-  const handleCompra = (id: number) => {
+  // --- CÁLCULOS ---
+  const valorTotal = inventario.reduce((acc, p) => acc + (p.precio * p.stock), 0);
+
+  // --- ACCIONES ---
+  const handleCompra = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita que se abra el zoom al comprar
     setInventario(prev => prev.map(p => 
       (p.id === id && p.stock > 0) ? { ...p, stock: p.stock - 1 } : p
     ));
   };
 
-  // 6. LÓGICA: Estadísticas
-  const totalCat = productosFiltrados.length;
-  const valorTotal = inventario.reduce((acc, p) => acc + (p.precio * p.stock), 0);
-
   return (
-    <div className="app-container">
+    <div className="ecoshop-container">
       <header>
-        <h1>EcoShop React 🌿</h1>
-        <div className="stats-panel">
-          <p>Productos en catálogo: {totalCat}</p>
-          <p>Valor Inventario Total: ${valorTotal.toLocaleString()}</p>
+        <h1>EcoShop Dashboard 🌿</h1>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <small>Productos</small>
+            <p>{productosVisibles.length}</p>
+          </div>
+          <div className="stat-card">
+            <small>Valor Inventario</small>
+            <p>${valorTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+          </div>
         </div>
       </header>
 
-      <section className="controles">
+      <div className="toolbar">
         <input 
           type="text" 
-          placeholder="Buscar..." 
-          value={busqueda}
+          placeholder="Buscar producto..." 
           onChange={(e) => setBusqueda(e.target.value)}
         />
-        <select onChange={(e) => setCategoriaSel(e.target.value)}>
-          <option value="todos">Todas las categorías</option>
-          <option value="hogar">Hogar</option>
-          <option value="tecnología">Tecnología</option>
-          <option value="deportes">Deportes</option>
-        </select>
-      </section>
-
-      <main className="grilla-productos">
-        {productosFiltrados.map(prod => (
-          <div key={prod.id} className={`card ${prod.stock === 0 ? 'agotado' : ''}`}>
-            <img src={prod.imagen} alt={prod.nombre} />
-            <h3>{prod.nombre}</h3>
-            <p>Stock: {prod.stock}</p>
-            <p>Precio: ${prod.precio}</p>
+        <div className="filter-group">
+          {['todos', 'hogar', 'tecnología', 'deportes'].map(cat => (
             <button 
-              disabled={prod.stock === 0}
-              onClick={() => handleCompra(prod.id)}
+              key={cat}
+              className={catFiltro === cat ? 'active' : ''}
+              onClick={() => setCatFiltro(cat)}
             >
-              {prod.stock === 0 ? 'Agotado' : 'Comprar'}
+              {cat}
             </button>
+          ))}
+        </div>
+      </div>
+
+      <main className="product-grid">
+        {productosVisibles.map(p => (
+          <div 
+            key={p.id} 
+            className={`product-card ${p.stock === 0 ? 'out-of-stock' : ''}`}
+            onClick={() => setSeleccionado(p)}
+          >
+            <img src={p.imagen} alt={p.nombre} />
+            <div className="card-info">
+              <h3>{p.nombre}</h3>
+              <p className="price">${p.precio.toFixed(2)}</p>
+              <p className="stock">Stock: {p.stock}</p>
+              <button 
+                disabled={p.stock === 0}
+                onClick={(e) => handleCompra(p.id, e)}
+              >
+                {p.stock === 0 ? 'Agotado' : 'Comprar'}
+              </button>
+            </div>
           </div>
         ))}
       </main>
+
+      {/* EFECTO SELECCIÓN (MODAL/ZOOM) */}
+      {seleccionado && (
+        <div className="modal-overlay" onClick={() => setSeleccionado(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setSeleccionado(null)}>×</button>
+            <div className="modal-body">
+              <img src={seleccionado.imagen} alt={seleccionado.nombre} />
+              <div>
+                <h2>{seleccionado.nombre}</h2>
+                <p className="badge">{seleccionado.categoria}</p>
+                <p className="desc">{seleccionado.descripcion}</p>
+                <p className="modal-price">Precio: ${seleccionado.precio}</p>
+                <p>Stock actual: {seleccionado.stock} unidades</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default App;
